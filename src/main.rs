@@ -135,23 +135,26 @@ impl Pokemon {
             stargazers_count: u16,
         }
 
+        
         // Get repos from github api
         let res = reqwest::Client::new()
-            .get("https://api.github.com/users/Dot32IsCool/repos?per_page=100")
-            .header("User-Agent", "repo_list") // Required by github api
-            .send().await?;
-            
+        .get("https://api.github.com/users/Dot32IsCool/repos?per_page=100")
+        .header("User-Agent", "repo_list") // Required by github api
+        .send().await?;
+        
         // Parse response into a vector of repos
         let text = res.text().await?;
         let mut repos: Vec<Repo> = serde_json::from_str(&text).expect("Failed to parse repos");
-
+        
         // sort repos by stargazer count
         repos.sort_by(|a, b| b.stargazers_count.cmp(&a.stargazers_count));
+        
+        let rng = rand::thread_rng().gen_range(0..=repos.len());
 
         Ok(Pokemon {
-            number: repos[0].stargazers_count,
-            name: repos[0].name.clone(),
-            description: repos[0].description.clone().unwrap_or("No description".to_string()),
+            number: repos[rng].stargazers_count,
+            name: repos[rng].name.clone(),
+            description: repos[rng].description.clone().unwrap_or("No description".to_string()),
         })
     }
 }
