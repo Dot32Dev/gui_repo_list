@@ -150,7 +150,7 @@ impl Pokemon {
 
         Ok(Pokemon {
             number: repos[0].stargazers_count,
-            name: repos[0].name.to_uppercase(),
+            name: repos[0].name.to_lowercase(),
             description: repos[0].description.clone().unwrap_or("No description".to_string()),
         })
     }
