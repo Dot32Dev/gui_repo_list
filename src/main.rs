@@ -111,7 +111,7 @@ impl Pokemon {
         column![
             row![
                 text(&self.name).size(30).width(Length::Fill),
-                text(format!("#{}", self.number))
+                text(format!("{} Stars", self.number))
                     .size(20)
                     .style(Color::from([0.5, 0.5, 0.5])),
             ]
@@ -150,7 +150,7 @@ impl Pokemon {
 
         Ok(Pokemon {
             number: repos[0].stargazers_count,
-            name: repos[0].name.to_lowercase(),
+            name: repos[0].name.clone(),
             description: repos[0].description.clone().unwrap_or("No description".to_string()),
         })
     }
