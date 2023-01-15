@@ -90,9 +90,9 @@ impl Application for RepoList {
             .into()
     }
 
-    // fn theme(&self) -> Theme {
-    //     Theme::Dark
-    // }
+    fn theme(&self) -> Theme {
+        Theme::Dark
+    }
 }
 
 #[derive(Debug, Clone)]
