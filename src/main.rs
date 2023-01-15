@@ -5,63 +5,57 @@ use iced::{
 };
 
 pub fn main() -> iced::Result {
-    Pokedex::run(Settings::default())
+    RepoList::run(Settings::default())
 }
 
 #[derive(Debug)]
-enum Pokedex {
+enum RepoList {
     Loading,
-    Loaded { pokemon: Pokemon },
+    Loaded { pokemon: Repositories },
     Errored,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    PokemonFound(Result<Pokemon, Error>),
+    PokemonFound(Result<Repositories, Error>),
     Search,
 }
 
-impl Application for Pokedex {
+impl Application for RepoList {
     type Message = Message;
     type Theme = Theme;
     type Executor = iced::executor::Default;
     type Flags = ();
 
-    fn new(_flags: ()) -> (Pokedex, Command<Message>) {
+    fn new(_flags: ()) -> (RepoList, Command<Message>) {
         (
-            Pokedex::Loading,
-            Command::perform(Pokemon::search(), Message::PokemonFound),
+            RepoList::Loading,
+            Command::perform(Repositories::search(), Message::PokemonFound),
         )
     }
 
     fn title(&self) -> String {
-        let subtitle = match self {
-            Pokedex::Loading => "Loading",
-            Pokedex::Loaded { pokemon, .. } => &pokemon.name,
-            Pokedex::Errored { .. } => "Whoops!",
-        };
-
-        format!("{} - Pokédex", subtitle)
+        "Repo List".to_string()
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::PokemonFound(Ok(pokemon)) => {
-                *self = Pokedex::Loaded { pokemon };
+                *self = RepoList::Loaded { pokemon };
 
                 Command::none()
             }
             Message::PokemonFound(Err(_error)) => {
-                *self = Pokedex::Errored;
+                *self = RepoList::Errored;
 
                 Command::none()
             }
             Message::Search => match self {
-                Pokedex::Loading => Command::none(),
+                RepoList::Loading => Command::none(),
                 _ => {
-                    *self = Pokedex::Loading;
+                    *self = RepoList::Loading;
 
-                    Command::perform(Pokemon::search(), Message::PokemonFound)
+                    Command::perform(Repositories::search(), Message::PokemonFound)
                 }
             },
         }
@@ -69,18 +63,18 @@ impl Application for Pokedex {
 
     fn view(&self) -> Element<Message> {
         let content = match self {
-            Pokedex::Loading => {
-                column![text("Searching for Pokémon...").size(40),]
+            RepoList::Loading => {
+                column![text("Loading...").size(40),]
                     .width(Length::Shrink)
             }
-            Pokedex::Loaded { pokemon } => column![
+            RepoList::Loaded { pokemon } => column![
                 pokemon.view(),
                 button("Keep searching!").on_press(Message::Search)
             ]
             .max_width(500)
             .spacing(20)
             .align_items(Alignment::End),
-            Pokedex::Errored => column![
+            RepoList::Errored => column![
                 text("Whoops! Something went wrong...").size(40),
                 button("Try again").on_press(Message::Search)
             ]
@@ -95,16 +89,20 @@ impl Application for Pokedex {
             .center_y()
             .into()
     }
+
+    // fn theme(&self) -> Theme {
+    //     Theme::Dark
+    // }
 }
 
 #[derive(Debug, Clone)]
-struct Pokemon {
+struct Repositories {
     number: u16,
     name: String,
     description: String,
 }
 
-impl Pokemon {
+impl Repositories {
     const TOTAL: u16 = 807;
 
     fn view(&self) -> Element<Message> {
@@ -124,7 +122,7 @@ impl Pokemon {
         .into()
     }
 
-    async fn search() -> Result<Pokemon, Error> {
+    async fn search() -> Result<Repositories, Error> {
         use rand::Rng;
         use serde::Deserialize;
 
@@ -149,9 +147,9 @@ impl Pokemon {
         // sort repos by stargazer count
         repos.sort_by(|a, b| b.stargazers_count.cmp(&a.stargazers_count));
         
-        let rng = rand::thread_rng().gen_range(0..=repos.len());
+        let rng = rand::thread_rng().gen_range(0..repos.len());
 
-        Ok(Pokemon {
+        Ok(Repositories {
             number: repos[rng].stargazers_count,
             name: repos[rng].name.clone(),
             description: repos[rng].description.clone().unwrap_or("No description".to_string()),
@@ -162,7 +160,6 @@ impl Pokemon {
 #[derive(Debug, Clone)]
 enum Error {
     APIError,
-    LanguageError,
 }
 
 impl From<reqwest::Error> for Error {
