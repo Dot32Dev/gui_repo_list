@@ -11,13 +11,13 @@ pub fn main() -> iced::Result {
 #[derive(Debug)]
 enum RepoList {
     Loading,
-    Loaded { pokemon: Repositories },
+    Loaded { repositories: Repositories },
     Errored,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    PokemonFound(Result<Repositories, Error>),
+    Loaded(Result<Repositories, Error>),
     Search,
 }
 
@@ -30,7 +30,7 @@ impl Application for RepoList {
     fn new(_flags: ()) -> (RepoList, Command<Message>) {
         (
             RepoList::Loading,
-            Command::perform(Repositories::search(), Message::PokemonFound),
+            Command::perform(Repositories::search(), Message::Loaded),
         )
     }
 
@@ -40,12 +40,12 @@ impl Application for RepoList {
 
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
-            Message::PokemonFound(Ok(pokemon)) => {
-                *self = RepoList::Loaded { pokemon };
+            Message::Loaded(Ok(repositories)) => {
+                *self = RepoList::Loaded { repositories };
 
                 Command::none()
             }
-            Message::PokemonFound(Err(_error)) => {
+            Message::Loaded(Err(_error)) => {
                 *self = RepoList::Errored;
 
                 Command::none()
@@ -55,7 +55,7 @@ impl Application for RepoList {
                 _ => {
                     *self = RepoList::Loading;
 
-                    Command::perform(Repositories::search(), Message::PokemonFound)
+                    Command::perform(Repositories::search(), Message::Loaded)
                 }
             },
         }
@@ -67,8 +67,8 @@ impl Application for RepoList {
                 column![text("Loading...").size(40),]
                     .width(Length::Shrink)
             }
-            RepoList::Loaded { pokemon } => column![
-                pokemon.view(),
+            RepoList::Loaded { repositories } => column![
+                repositories.view(),
                 button("Keep searching!").on_press(Message::Search)
             ]
             .max_width(500)
