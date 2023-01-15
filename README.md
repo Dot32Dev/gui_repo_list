@@ -4,4 +4,4 @@ work in progress
 
 Currently just a slightly modified version of a GUI pokedex example
 
-Built in [Iced](https://github.com/iced-rs/iced), which is Pop_OS's GUI toolkit of choice for their new cosmic desktop environment
+Built in [Iced](https://github.com/iced-rs/iced), which is Pop!_OS's GUI toolkit of choice for their new cosmic desktop environment
