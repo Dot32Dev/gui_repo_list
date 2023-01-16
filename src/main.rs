@@ -118,7 +118,7 @@ impl Repositories {
             self.description.as_ref(),
         ]
         .spacing(20)
-        .align_items(Alignment::Center)
+        .align_items(Alignment::Start)
         .into()
     }
 
