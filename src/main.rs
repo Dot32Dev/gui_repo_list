@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use iced::widget::{self, column, container, row, text, scrollable};
+use iced::widget::{self, column, container, row, text, scrollable, text_input};
 use iced::widget::scrollable::{Properties};
 use iced::{
     Alignment, Application, Color, Command, Element, Length, Settings, Theme, alignment,
@@ -24,6 +24,7 @@ enum List {
 enum Message {
     Loaded(Result<Repositories, Error>),
     Search(String),
+    InputChanged(String),
 }
 
 impl Application for RepoList {
@@ -64,7 +65,17 @@ impl Application for RepoList {
 
                     Command::perform(Repositories::search(username), Message::Loaded)
                 }
-            },
+            }
+            Message::InputChanged(input) => {
+                match &mut self.list {
+                    List::Loading {username: _} => Command::none(),
+                    List::Loaded { repositories } => {
+                        repositories.input_value = input;
+                        Command::none()
+                    }
+                    List::Errored => Command::none(),
+                }
+            }
         }
     }
 
@@ -104,6 +115,7 @@ impl Application for RepoList {
 #[derive(Debug, Clone)]
 struct Repositories {
     list: Vec<Repo>,
+    input_value: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -154,18 +166,25 @@ impl Repositories {
 
         // repos.into()
 
-        scrollable(
-            container(repos)
-            .padding(20)
-            .width(Length::Fill)
-            // ALIGNMENT
-            .align_x(alignment::Horizontal::Center)
-        )
-        .vertical_scroll(
-            Properties::new()
-                .width(10)
-                .margin(0)
-                .scroller_width(5),
+        column!(
+            text_input(
+                "Dot32IsCool",
+                &self.input_value,
+                Message::InputChanged,
+            ).on_submit(Message::Search(self.input_value.clone())),
+            scrollable(
+                container(repos)
+                .padding(20)
+                .width(Length::Fill)
+                // ALIGNMENT
+                .align_x(alignment::Horizontal::Center)
+            )
+            .vertical_scroll(
+                Properties::new()
+                    .width(10)
+                    .margin(0)
+                    .scroller_width(5),
+            )
         ).into()
     }
 
@@ -193,6 +212,7 @@ impl Repositories {
         repos.sort_by(|a, b| b.stargazers_count.cmp(&a.stargazers_count));
 
         Ok(Repositories {
+            input_value: username,
             list: repos,
         })
     }
