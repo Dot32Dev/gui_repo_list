@@ -97,12 +97,10 @@ impl Application for RepoList {
 
 #[derive(Debug, Clone)]
 struct Repositories {
-    number: u16,
-    name: String,
-    description: String,
+    list: Vec<Repo>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 struct Repo {
     name: String,
     description: Option<String>,
@@ -113,20 +111,22 @@ impl Repositories {
     // const TOTAL: u16 = 807;
 
     fn view(&self) -> Element<Message> {
-        column![
-            row![
-                text(&self.name).size(30).width(Length::Fill),
-                text(format!("{} Stars", self.number))
-                    .size(20)
-                    .style(Color::from([0.5, 0.5, 0.5])),
-            ]
-            .align_items(Alignment::Center)
-            .spacing(20),
-            self.description.as_ref(),
-        ]
-        .spacing(20)
-        .align_items(Alignment::Start)
-        .into()
+        // display repos in a column
+        let mut repos = column![];
+        for repo in &self.list {
+            repos = repos.push(
+                row![
+                    text(&repo.name).size(30).width(Length::Fill),
+                    text(format!("{} Stars", repo.stargazers_count))
+                        .size(20)
+                        .style(Color::from([0.5, 0.5, 0.5])),
+                ]
+                .align_items(Alignment::Center)
+                .spacing(20),
+            );
+        };
+
+        repos.into()
     }
 
     async fn search() -> Result<Repositories, Error> {
@@ -147,10 +147,13 @@ impl Repositories {
         
         let rng = rand::thread_rng().gen_range(0..repos.len());
 
+        // Ok(Repositories {
+        //     number: repos[rng].stargazers_count,
+        //     name: repos[rng].name.clone(),
+        //     description: repos[rng].description.clone().unwrap_or("No description".to_string()),
+        // })
         Ok(Repositories {
-            number: repos[rng].stargazers_count,
-            name: repos[rng].name.clone(),
-            description: repos[rng].description.clone().unwrap_or("No description".to_string()),
+            list: repos,
         })
     }
 }
