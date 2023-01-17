@@ -117,10 +117,15 @@ impl Repositories {
             repos = repos.push(
                 container(
                     row![
-                        text(&repo.name)
-                            .size(30)
-                            .width(Length::Fill)
-                            .style(if &repo.name == "gui_repo_list" { Color::from([0.5, 0.5, 0.5])} else { Color::from([0.8, 0.8, 0.8]) }),
+                        column!(
+                            text(&repo.name)
+                                .size(30)
+                                .width(Length::Fill)
+                                .style(if &repo.name == "gui_repo_list" { Color::from([0.5, 0.5, 0.5])} else { Color::from([0.8, 0.8, 0.8]) }),
+                            text(&repo.description.clone().unwrap_or("No description".to_string()))
+                                .size(20)
+                                .style(Color::from([0.5, 0.5, 0.5]))
+                        ).width(Length::Fill).spacing(5),
                         text(format!("{} Stars", repo.stargazers_count))
                             .size(20)
                             .style(Color::from([0.5, 0.5, 0.5])),
@@ -128,7 +133,8 @@ impl Repositories {
                     .align_items(Alignment::Center)
                     .spacing(20)
                 )
-                .max_width(500),
+                .max_width(500)
+                .padding(20),
             );
         };
 
