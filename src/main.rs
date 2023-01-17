@@ -14,7 +14,7 @@ struct RepoList {
 }
 
 enum List {
-    Loading,
+    Loading { username: String},
     Loaded { repositories: Repositories },
     Errored,
 }
@@ -22,7 +22,7 @@ enum List {
 #[derive(Debug, Clone)]
 enum Message {
     Loaded(Result<Repositories, Error>),
-    Search,
+    Search(String),
 }
 
 impl Application for RepoList {
@@ -34,9 +34,9 @@ impl Application for RepoList {
     fn new(_flags: ()) -> (RepoList, Command<Message>) {
         (
             RepoList {
-                list: List::Loading,
+                list: List::Loading { username: "dot32iscool".to_string()},
             },
-            Command::perform(Repositories::search(), Message::Loaded),
+            Command::perform(Repositories::search("dot32iscool".to_string()), Message::Loaded),
         )
     }
 
@@ -56,12 +56,12 @@ impl Application for RepoList {
 
                 Command::none()
             }
-            Message::Search => match self.list {
-                List::Loading => Command::none(),
+            Message::Search(username) => match self.list {
+                List::Loading {username: _} => Command::none(),
                 _ => {
-                    self.list = List::Loading;
+                    self.list = List::Loading { username: username.clone()};
 
-                    Command::perform(Repositories::search(), Message::Loaded)
+                    Command::perform(Repositories::search(username), Message::Loaded)
                 }
             },
         }
@@ -69,7 +69,7 @@ impl Application for RepoList {
 
     fn view(&self) -> Element<Message> {
         let content = match &self.list {
-            List::Loading => {
+            List::Loading {username: _} => {
                 column![text("Loading...").size(40),]
                     .width(Length::Shrink)
             }
@@ -81,7 +81,7 @@ impl Application for RepoList {
             .align_items(Alignment::End),
             List::Errored => column![
                 text("Whoops! Something went wrong...").size(40),
-                text_button("Try again").on_press(Message::Search)
+                text_button("Try again").on_press(Message::Search("dot32iscool".to_string()))
             ]
             .spacing(20)
             .align_items(Alignment::End),
@@ -168,10 +168,10 @@ impl Repositories {
         ).into()
     }
 
-    async fn search() -> Result<Repositories, Error> {
+    async fn search(username: String) -> Result<Repositories, Error> {
         // Get repos from github api
         let res = reqwest::Client::new()
-        .get("https://api.github.com/users/Dot32IsCool/repos?per_page=100")
+        .get(&format!("https://api.github.com/users/{}/repos?per_page=100", username))
         .header("User-Agent", "repo_list") // Required by github api
         .send().await?;
         
