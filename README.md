@@ -1,7 +1,5 @@
 # gui_repo_list
-work in progress
-<img width="1136" alt="Screenshot 2023-01-15 at 16 10 33" src="https://user-images.githubusercontent.com/61964090/212529779-cddaaebd-2b62-4306-909a-785d222e3529.png">
 
-Currently just a slightly modified version of a GUI pokedex example
+<img width="1136" alt="Screenshot 2023-01-17 at 13 58 22" src="https://user-images.githubusercontent.com/61964090/212824267-936b5bd4-3e4c-41c2-b47f-9f7f5f4b5043.png">
 
 Built in [Iced](https://github.com/iced-rs/iced), which is Pop!_OS's GUI toolkit of choice for their new cosmic desktop environment
