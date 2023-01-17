@@ -1,5 +1,6 @@
 use serde::Deserialize;
-use iced::widget::{self, column, container, row, text};
+use iced::widget::{self, column, container, row, text, scrollable};
+use iced::widget::scrollable::{Properties, Scrollbar, Scroller};
 use iced::{
     Alignment, Application, Color, Command, Element, Length, Settings, Theme,
 };
@@ -126,7 +127,15 @@ impl Repositories {
             );
         };
 
-        repos.into()
+        // repos.into()
+
+        scrollable(container(repos).padding(20))
+        .vertical_scroll(
+            Properties::new()
+                .width(10)
+                .margin(0)
+                .scroller_width(5),
+        ).into()
     }
 
     async fn search() -> Result<Repositories, Error> {
@@ -147,11 +156,6 @@ impl Repositories {
         
         let rng = rand::thread_rng().gen_range(0..repos.len());
 
-        // Ok(Repositories {
-        //     number: repos[rng].stargazers_count,
-        //     name: repos[rng].name.clone(),
-        //     description: repos[rng].description.clone().unwrap_or("No description".to_string()),
-        // })
         Ok(Repositories {
             list: repos,
         })
