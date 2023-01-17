@@ -92,8 +92,8 @@ impl Application for RepoList {
             .spacing(20)
             .align_items(Alignment::End),
             List::Errored => column![
-                text("Whoops! Something went wrong...").size(40),
-                text_button("Try again").on_press(Message::Search("dot32iscool".to_string()))
+                text("Could not retreive stats").size(40),
+                text_button("Back to Dot32").on_press(Message::Search("dot32iscool".to_string()))
             ]
             .spacing(20)
             .align_items(Alignment::End),
@@ -206,7 +206,11 @@ impl Repositories {
         
         // Parse response into a vector of repos
         // let text = res.text().await?;
-        let mut repos: Vec<Repo> = serde_json::from_str(&text).expect("Failed to parse repos");
+        // let mut repos: Vec<Repo> = serde_json::from_str(&text).expect("Failed to parse repos");
+        let mut repos: Vec<Repo> = match serde_json::from_str(&text) {
+            Ok(repos) => repos,
+            Err(_) => return Err(Error::APIError),
+        };
         
         // sort repos by stargazer count
         repos.sort_by(|a, b| b.stargazers_count.cmp(&a.stargazers_count));
