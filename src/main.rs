@@ -1,5 +1,5 @@
-use iced::futures;
-use iced::widget::{self, column, container, image, row, text};
+use serde::Deserialize;
+use iced::widget::{self, column, container, row, text};
 use iced::{
     Alignment, Application, Color, Command, Element, Length, Settings, Theme,
 };
@@ -102,8 +102,15 @@ struct Repositories {
     description: String,
 }
 
+#[derive(Deserialize, Debug)]
+struct Repo {
+    name: String,
+    description: Option<String>,
+    stargazers_count: u16,
+}
+
 impl Repositories {
-    const TOTAL: u16 = 807;
+    // const TOTAL: u16 = 807;
 
     fn view(&self) -> Element<Message> {
         column![
@@ -124,15 +131,6 @@ impl Repositories {
 
     async fn search() -> Result<Repositories, Error> {
         use rand::Rng;
-        use serde::Deserialize;
-
-        #[derive(Deserialize, Debug)]
-        struct Repo {
-            name: String,
-            description: Option<String>,
-            stargazers_count: u16,
-        }
-
         
         // Get repos from github api
         let res = reqwest::Client::new()
