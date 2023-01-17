@@ -9,8 +9,11 @@ pub fn main() -> iced::Result {
     RepoList::run(Settings::default())
 }
 
-#[derive(Debug)]
-enum RepoList {
+struct RepoList {
+    list: List,
+}
+
+enum List {
     Loading,
     Loaded { repositories: Repositories },
     Errored,
@@ -30,7 +33,9 @@ impl Application for RepoList {
 
     fn new(_flags: ()) -> (RepoList, Command<Message>) {
         (
-            RepoList::Loading,
+            RepoList {
+                list: List::Loading,
+            },
             Command::perform(Repositories::search(), Message::Loaded),
         )
     }
@@ -42,19 +47,19 @@ impl Application for RepoList {
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Loaded(Ok(repositories)) => {
-                *self = RepoList::Loaded { repositories };
+                self.list = List::Loaded { repositories };
 
                 Command::none()
             }
             Message::Loaded(Err(_error)) => {
-                *self = RepoList::Errored;
+                self.list = List::Errored;
 
                 Command::none()
             }
-            Message::Search => match self {
-                RepoList::Loading => Command::none(),
+            Message::Search => match self.list {
+                List::Loading => Command::none(),
                 _ => {
-                    *self = RepoList::Loading;
+                    self.list = List::Loading;
 
                     Command::perform(Repositories::search(), Message::Loaded)
                 }
@@ -63,18 +68,18 @@ impl Application for RepoList {
     }
 
     fn view(&self) -> Element<Message> {
-        let content = match self {
-            RepoList::Loading => {
+        let content = match &self.list {
+            List::Loading => {
                 column![text("Loading...").size(40),]
                     .width(Length::Shrink)
             }
-            RepoList::Loaded { repositories } => column![
+            List::Loaded { repositories } => column![
                 repositories.view(),
                 // text_button("Keep searching!").on_press(Message::Search)
             ]
             .spacing(20)
             .align_items(Alignment::End),
-            RepoList::Errored => column![
+            List::Errored => column![
                 text("Whoops! Something went wrong...").size(40),
                 text_button("Try again").on_press(Message::Search)
             ]
