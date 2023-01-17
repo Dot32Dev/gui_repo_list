@@ -70,13 +70,13 @@ impl Application for RepoList {
             }
             RepoList::Loaded { repositories } => column![
                 repositories.view(),
-                // button("Keep searching!").on_press(Message::Search)
+                // text_button("Keep searching!").on_press(Message::Search)
             ]
             .spacing(20)
             .align_items(Alignment::End),
             RepoList::Errored => column![
                 text("Whoops! Something went wrong...").size(40),
-                button("Try again").on_press(Message::Search)
+                text_button("Try again").on_press(Message::Search)
             ]
             .spacing(20)
             .align_items(Alignment::End),
@@ -188,6 +188,6 @@ impl From<reqwest::Error> for Error {
     }
 }
 
-fn button(text: &str) -> widget::Button<'_, Message> {
+fn text_button(text: &str) -> widget::Button<'_, Message> {
     widget::button(text).padding(10)
 }
