@@ -4,6 +4,7 @@ use iced::widget::scrollable::{Properties};
 use iced::{
     Alignment, Application, Color, Command, Element, Length, Settings, Theme, alignment,
 };
+use iced::futures::StreamExt;
 
 pub fn main() -> iced::Result {
     RepoList::run(Settings::default())
@@ -174,9 +175,18 @@ impl Repositories {
         .get(&format!("https://api.github.com/users/{}/repos?per_page=100", username))
         .header("User-Agent", "repo_list") // Required by github api
         .send().await?;
+
+        // Steam response
+        let mut text = String::new();
+        let mut stream = res.bytes_stream();
+        while let Some(item) = stream.next().await {
+            let chunk = item?;
+            text.push_str(&String::from_utf8(chunk.to_vec()).unwrap());
+            println!("Loaded {} characters", text.len());
+        }
         
         // Parse response into a vector of repos
-        let text = res.text().await?;
+        // let text = res.text().await?;
         let mut repos: Vec<Repo> = serde_json::from_str(&text).expect("Failed to parse repos");
         
         // sort repos by stargazer count
