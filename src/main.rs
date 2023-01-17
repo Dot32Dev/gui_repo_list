@@ -2,7 +2,7 @@ use serde::Deserialize;
 use iced::widget::{self, column, container, row, text, scrollable};
 use iced::widget::scrollable::{Properties, Scrollbar, Scroller};
 use iced::{
-    Alignment, Application, Color, Command, Element, Length, Settings, Theme,
+    Alignment, Application, Color, Command, Element, Length, Settings, Theme, alignment,
 };
 
 pub fn main() -> iced::Result {
@@ -70,9 +70,8 @@ impl Application for RepoList {
             }
             RepoList::Loaded { repositories } => column![
                 repositories.view(),
-                button("Keep searching!").on_press(Message::Search)
+                // button("Keep searching!").on_press(Message::Search)
             ]
-            .max_width(500)
             .spacing(20)
             .align_items(Alignment::End),
             RepoList::Errored => column![
@@ -116,20 +115,29 @@ impl Repositories {
         let mut repos = column![];
         for repo in &self.list {
             repos = repos.push(
-                row![
-                    text(&repo.name).size(30).width(Length::Fill),
-                    text(format!("{} Stars", repo.stargazers_count))
-                        .size(20)
-                        .style(Color::from([0.5, 0.5, 0.5])),
-                ]
-                .align_items(Alignment::Center)
-                .spacing(20),
+                container(
+                    row![
+                        text(&repo.name).size(30).width(Length::Fill),
+                        text(format!("{} Stars", repo.stargazers_count))
+                            .size(20)
+                            .style(Color::from([0.5, 0.5, 0.5])),
+                    ]
+                    .align_items(Alignment::Center)
+                    .spacing(20)
+                )
+                .max_width(500),
             );
         };
 
         // repos.into()
 
-        scrollable(container(repos).padding(20))
+        scrollable(
+            container(repos)
+            .padding(20)
+            .width(Length::Fill)
+            // ALIGNMENT
+            .align_x(alignment::Horizontal::Center)
+        )
         .vertical_scroll(
             Properties::new()
                 .width(10)
