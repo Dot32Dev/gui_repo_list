@@ -11,6 +11,7 @@ pub fn main() -> iced::Result {
 }
 
 struct RepoList {
+    input_value: String,
     list: List,
 }
 
@@ -36,6 +37,7 @@ impl Application for RepoList {
     fn new(_flags: ()) -> (RepoList, Command<Message>) {
         (
             RepoList {
+                input_value: "dot32iscool".to_string(),
                 list: List::Loading { username: "dot32iscool".to_string()},
             },
             Command::perform(Repositories::search("dot32iscool".to_string()), Message::Loaded),
@@ -67,44 +69,59 @@ impl Application for RepoList {
                 }
             }
             Message::InputChanged(input) => {
-                match &mut self.list {
-                    List::Loading {username: _} => Command::none(),
-                    List::Loaded { repositories } => {
-                        repositories.input_value = input;
-                        Command::none()
-                    }
-                    List::Errored => Command::none(),
-                }
+                self.input_value = input;
+                Command::none()
             }
         }
     }
 
     fn view(&self) -> Element<Message> {
         let content = match &self.list {
-            List::Loading {username: _} => {
-                column![text("Loading...").size(40),]
-                    .width(Length::Shrink)
-            }
+            List::Loading {username: _} => column![
+                // column![text("Loading...").size(40),]
+                //     .width(Length::Shrink)
+                container(
+                    text("Loading...")
+                        .size(40)
+                )
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .align_x(alignment::Horizontal::Center)
+                .align_y(alignment::Vertical::Center),
+            ],
             List::Loaded { repositories } => column![
                 repositories.view(),
-                // text_button("Keep searching!").on_press(Message::Search)
             ]
             .spacing(20)
             .align_items(Alignment::End),
             List::Errored => column![
-                text("Could not retreive stats").size(40),
-                text_button("Back to Dot32").on_press(Message::Search("dot32iscool".to_string()))
+                container(
+                    text("Could not find any repositories for this user")
+                        .size(40)
+                )
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .align_x(alignment::Horizontal::Center)
+                .align_y(alignment::Vertical::Center),
+                // text_button("Back to Dot32").on_press(Message::Search("dot32iscool".to_string()))
             ]
             .spacing(20)
             .align_items(Alignment::End),
         };
 
-        container(content)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .center_x()
-            .center_y()
-            .into()
+        container(column![
+            text_input(
+                "Search for a GitHub user",
+                &self.input_value,
+                Message::InputChanged,
+            ).on_submit(Message::Search(self.input_value.clone())),
+            content
+        ])
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .center_x()
+        .center_y()
+        .into()
     }
 
     fn theme(&self) -> Theme {
@@ -115,7 +132,6 @@ impl Application for RepoList {
 #[derive(Debug, Clone)]
 struct Repositories {
     list: Vec<Repo>,
-    input_value: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -166,26 +182,21 @@ impl Repositories {
 
         // repos.into()
 
-        column!(
-            text_input(
-                "Dot32IsCool",
-                &self.input_value,
-                Message::InputChanged,
-            ).on_submit(Message::Search(self.input_value.clone())),
-            scrollable(
-                container(repos)
-                .padding(20)
-                .width(Length::Fill)
-                // ALIGNMENT
-                .align_x(alignment::Horizontal::Center)
-            )
-            .vertical_scroll(
-                Properties::new()
-                    .width(10)
-                    .margin(0)
-                    .scroller_width(5),
-            )
-        ).into()
+        scrollable(
+            container(repos)
+            .padding(20)
+            .width(Length::Fill)
+            // ALIGNMENT
+            .align_x(alignment::Horizontal::Center)
+        )
+        .vertical_scroll(
+            Properties::new()
+                .width(10)
+                .margin(0)
+                .scroller_width(5),
+        )
+        .height(Length::Fill)
+        .into()
     }
 
     async fn search(username: String) -> Result<Repositories, Error> {
@@ -216,7 +227,6 @@ impl Repositories {
         repos.sort_by(|a, b| b.stargazers_count.cmp(&a.stargazers_count));
 
         Ok(Repositories {
-            input_value: username,
             list: repos,
         })
     }
