@@ -113,10 +113,18 @@ impl Repositories {
     fn view(&self) -> Element<Message> {
         // display repos in a column
         let mut repos = column![];
-        for repo in &self.list {
+        // keep track of the index of the repo
+        for (i, repo) in self.list.iter().enumerate() {
             repos = repos.push(
                 container(
                     row![
+                        // text(format!("{}-", i + 1))
+                        //     .size(30)
+                        //     .style(Color::from([0.5, 0.5, 0.5])),
+                        // print index with padded 0s
+                        text(format!("{:0>2}", i + 1))
+                            .size(30)
+                            .style(Color::from([0.5, 0.5, 0.5])),
                         column!(
                             text(&repo.name)
                                 .size(30)
@@ -130,7 +138,7 @@ impl Repositories {
                             .size(20)
                             .style(Color::from([0.5, 0.5, 0.5])),
                     ]
-                    .align_items(Alignment::Center)
+                    // .align_items(Alignment::Center)
                     .spacing(20)
                 )
                 .max_width(500)
