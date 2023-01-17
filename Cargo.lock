@@ -971,7 +971,6 @@ name = "gui_repo_list"
 version = "0.1.0"
 dependencies = [
  "iced",
- "rand",
  "reqwest",
  "serde",
  "serde_json",

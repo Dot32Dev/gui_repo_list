@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use iced::widget::{self, column, container, row, text, scrollable};
-use iced::widget::scrollable::{Properties, Scrollbar, Scroller};
+use iced::widget::scrollable::{Properties};
 use iced::{
     Alignment, Application, Color, Command, Element, Length, Settings, Theme, alignment,
 };
@@ -150,8 +150,6 @@ impl Repositories {
     }
 
     async fn search() -> Result<Repositories, Error> {
-        use rand::Rng;
-        
         // Get repos from github api
         let res = reqwest::Client::new()
         .get("https://api.github.com/users/Dot32IsCool/repos?per_page=100")
@@ -164,8 +162,6 @@ impl Repositories {
         
         // sort repos by stargazer count
         repos.sort_by(|a, b| b.stargazers_count.cmp(&a.stargazers_count));
-        
-        let rng = rand::thread_rng().gen_range(0..repos.len());
 
         Ok(Repositories {
             list: repos,
