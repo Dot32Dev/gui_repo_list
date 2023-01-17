@@ -117,7 +117,10 @@ impl Repositories {
             repos = repos.push(
                 container(
                     row![
-                        text(&repo.name).size(30).width(Length::Fill),
+                        text(&repo.name)
+                            .size(30)
+                            .width(Length::Fill)
+                            .style(if &repo.name == "gui_repo_list" { Color::from([0.5, 0.5, 0.5])} else { Color::from([0.8, 0.8, 0.8]) }),
                         text(format!("{} Stars", repo.stargazers_count))
                             .size(20)
                             .style(Color::from([0.5, 0.5, 0.5])),
