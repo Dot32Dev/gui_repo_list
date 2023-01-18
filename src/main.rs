@@ -97,7 +97,7 @@ impl Application for RepoList {
             .align_items(Alignment::End),
             List::Errored => column![
                 container(
-                    text("Could not find any repositories for this user")
+                    text("Could not find this user")
                         .size(40)
                 )
                 .width(Length::Fill)
