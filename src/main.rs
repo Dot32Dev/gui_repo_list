@@ -167,13 +167,13 @@ struct Repositories {
     list: Vec<Repo>,
     avatar: image::Handle,
     username: String,
-    // rate_limit: RateLimit,
+    rate_limit: RateLimit,
 }
 
 #[derive(Debug, Clone)]
 struct RateLimit {
-    limit: String,
-    remaining: String,
+    limit: u16,
+    remaining: u16,
     reset: u64,
 }
 
@@ -297,14 +297,14 @@ impl Repositories {
         .send().await?;
 
         // get rate limit info
-        let rate_limit = res.headers().get("x-ratelimit-remaining").unwrap().to_str().unwrap(); // how many requests are left
-        let max_requests = res.headers().get("x-ratelimit-limit").unwrap().to_str().unwrap(); // max requests per hour
-        let rate_limit_reset = res.headers().get("x-ratelimit-reset").unwrap().to_str().unwrap(); // when the rate limit resets (unix timestamp)
+        let rate_limit = res.headers().get("x-ratelimit-remaining").unwrap().to_str().unwrap().parse::<u16>().unwrap(); // how many requests are left
+        let max_requests = res.headers().get("x-ratelimit-limit").unwrap().to_str().unwrap().parse::<u16>().unwrap(); // max requests per hour
+        let rate_limit_reset = res.headers().get("x-ratelimit-reset").unwrap().to_str().unwrap().parse::<u64>().unwrap(); // when the rate limit resets (unix timestamp)
         println!("Rate limit: {}/{} (reset in <t:{}:R>)", rate_limit, max_requests, rate_limit_reset);
 
         // Get seconds until rate limit resets
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-        let seconds_until_reset = rate_limit_reset.parse::<u64>().unwrap() - now;
+        let seconds_until_reset = rate_limit_reset - now;
 
         // Convert seconds to hours, minutes, seconds
         let hours = seconds_until_reset / 3600;
@@ -327,11 +327,11 @@ impl Repositories {
             list: repos,
             avatar: avatar,
             username: user.login,
-            // rate_limit: RateLimit {
-            //     limit: max_requests.to_string(),
-            //     remaining: rate_limit.to_string(),
-            //     reset: seconds_until_reset,
-            // },
+            rate_limit: RateLimit {
+                limit: max_requests,
+                remaining: rate_limit,
+                reset: seconds_until_reset,
+            },
         })
     }
 
