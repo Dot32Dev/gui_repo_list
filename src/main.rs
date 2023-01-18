@@ -16,6 +16,7 @@ struct RepoList {
 }
 
 enum List {
+    EnterUsername,
     Loading,
     Loaded { repositories: Repositories },
     Errored,
@@ -38,11 +39,11 @@ impl Application for RepoList {
     fn new(_flags: ()) -> (RepoList, Command<Message>) {
         (
             RepoList {
-                input_value: "dot32iscool".to_string(),
-                list: List::Loading,
+                input_value: "".to_string(),
+                list: List::EnterUsername,
             },
-            Command::perform(Repositories::search("dot32iscool".to_string()), Message::Loaded),
-            // Command::none(),
+            // Command::perform(Repositories::search("dot32iscool".to_string()), Message::Loaded),
+            Command::none(),
         )
     }
 
@@ -83,6 +84,16 @@ impl Application for RepoList {
 
     fn view(&self) -> Element<Message> {
         let content = match &self.list {
+            List::EnterUsername => column![
+                container(
+                    text("Search for a GitHub user")
+                        .size(40)
+                )
+                .width(Length::Fill)
+                // .height(Length::Fill)
+                .align_x(alignment::Horizontal::Center)
+                // .align_y(alignment::Vertical::Center),
+            ],
             List::Loading => column![
                 // column![text("Loading...").size(40),]
                 //     .width(Length::Shrink)
@@ -119,7 +130,7 @@ impl Application for RepoList {
             container(row![
                 text("@"),
                 text_input(
-                    "Search for a GitHub user",
+                    "Dot32IsCool",
                     &self.input_value,
                     Message::InputChanged,
                 ).on_submit(Message::Search(self.input_value.clone())),
@@ -228,7 +239,11 @@ impl Repositories {
         .into()
     }
 
-    async fn search(username: String) -> Result<Repositories, Error> {
+    async fn search(mut username: String) -> Result<Repositories, Error> {
+        if username == "" {
+            username = "dot32iscool".to_string();
+        }
+
         // Get repos from github api
         let res = reqwest::Client::new()
         .get(&format!("https://api.github.com/users/{}/repos?per_page=100", username))
@@ -261,15 +276,17 @@ impl Repositories {
         .header("User-Agent", "repo_list") // Required by github api
         .send().await?;
 
+        // get rate limit info
+        let rate_limit = res.headers().get("x-ratelimit-remaining").unwrap().to_str().unwrap();
+        let rate_limit_reset = res.headers().get("x-ratelimit-reset").unwrap().to_str().unwrap();
+        println!("Rate limit: {} (reset in <t:{}:R>)", rate_limit, rate_limit_reset);
+
         // Parse response into a user
         let text = res.text().await?;
-        println!("{}", text);
         let user: User = match serde_json::from_str(&text) {
             Ok(user) => user,
             Err(_) => return Err(Error::APIError),
         };
-
-        println!("{}", user.avatar_url);
 
         // Get user avatar
         let avatar = Self::fetch_image(user.avatar_url).await?;
