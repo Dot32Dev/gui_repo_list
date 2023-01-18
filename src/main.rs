@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use iced::widget::{column, container, row, text, scrollable, text_input};
+use iced::widget::{column, container, row, text, scrollable, text_input, button};
 use iced::widget::scrollable::{Properties};
 use iced::{
     Alignment, Application, Color, Command, Element, Length, Settings, Theme, alignment,
@@ -111,13 +111,17 @@ impl Application for RepoList {
         };
 
         container(column![
-            text_input(
-                "Search for a GitHub user",
-                &self.input_value,
-                Message::InputChanged,
-            ).on_submit(Message::Search(self.input_value.clone())),
+            container(row![
+                text("@"),
+                text_input(
+                    "Search for a GitHub user",
+                    &self.input_value,
+                    Message::InputChanged,
+                ).on_submit(Message::Search(self.input_value.clone())),
+                button(text("Search")).on_press(Message::Search(self.input_value.clone()))
+            ].align_items(Alignment::Center)).width(300.into()).padding(10),
             content
-        ])
+        ].align_items(Alignment::Center))
         .width(Length::Fill)
         .height(Length::Fill)
         .center_x()
