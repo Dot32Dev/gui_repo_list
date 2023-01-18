@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use iced::widget::{column, container, row, text, scrollable, text_input, button};
+use iced::widget::{column, container, row, text, scrollable, text_input, button, image};
 use iced::widget::scrollable::{Properties};
 use iced::{
     Alignment, Application, Color, Command, Element, Length, Settings, Theme, alignment,
@@ -26,6 +26,7 @@ enum Message {
     Loaded(Result<Repositories, Error>),
     Search(String),
     InputChanged(String),
+    OpenLink(String),
 }
 
 impl Application for RepoList {
@@ -71,6 +72,10 @@ impl Application for RepoList {
             }
             Message::InputChanged(input) => {
                 self.input_value = input;
+                Command::none()
+            }
+            Message::OpenLink(link) => {
+                webbrowser::open(&link).unwrap();
                 Command::none()
             }
         }
@@ -137,6 +142,8 @@ impl Application for RepoList {
 #[derive(Debug, Clone)]
 struct Repositories {
     list: Vec<Repo>,
+    avatar: image::Handle,
+    username: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -144,6 +151,12 @@ struct Repo {
     name: String,
     description: Option<String>,
     stargazers_count: u16,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+struct User {
+    login: String,
+    avatar_url: String,
 }
 
 impl Repositories {
@@ -187,20 +200,31 @@ impl Repositories {
 
         // repos.into()
 
-        scrollable(
-            container(repos)
-            .padding(20)
-            .width(Length::Fill)
-            // ALIGNMENT
-            .align_x(alignment::Horizontal::Center)
-        )
-        .vertical_scroll(
-            Properties::new()
-                .width(10)
-                .margin(0)
-                .scroller_width(5),
-        )
-        .height(Length::Fill)
+        column![
+            container(row![
+                image(self.avatar.clone())
+                    .width(Length::Units(50))
+                    .height(Length::Units(50)),
+                text(&self.username).size(20),
+                //open link to github profile
+                button(text("Open Profile"))
+                    .on_press(Message::OpenLink(format!("https://github.com/{}", self.username)))
+            ].align_items(Alignment::Center).spacing(20)).align_x(alignment::Horizontal::Center).width(Length::Fill),
+            scrollable(
+                container(repos)
+                .padding(20)
+                .width(Length::Fill)
+                // ALIGNMENT
+                .align_x(alignment::Horizontal::Center)
+            )
+            .vertical_scroll(
+                Properties::new()
+                    .width(10)
+                    .margin(0)
+                    .scroller_width(5),
+            )
+            .height(Length::Fill)
+        ]
         .into()
     }
 
@@ -211,17 +235,17 @@ impl Repositories {
         .header("User-Agent", "repo_list") // Required by github api
         .send().await?;
 
-        // Steam response
-        let mut text = String::new();
-        let mut stream = res.bytes_stream();
-        while let Some(item) = stream.next().await {
-            let chunk = item?;
-            text.push_str(&String::from_utf8(chunk.to_vec()).unwrap());
-            println!("Loaded {} characters", text.len());
-        }
+        // // Steam response
+        // let mut text = String::new();
+        // let mut stream = res.bytes_stream();
+        // while let Some(item) = stream.next().await {
+        //     let chunk = item?;
+        //     text.push_str(&String::from_utf8(chunk.to_vec()).unwrap());
+        //     println!("Loaded {} characters", text.len());
+        // }
         
         // Parse response into a vector of repos
-        // let text = res.text().await?;
+        let text = res.text().await?;
         // let mut repos: Vec<Repo> = serde_json::from_str(&text).expect("Failed to parse repos");
         let mut repos: Vec<Repo> = match serde_json::from_str(&text) {
             Ok(repos) => repos,
@@ -231,9 +255,35 @@ impl Repositories {
         // sort repos by stargazer count
         repos.sort_by(|a, b| b.stargazers_count.cmp(&a.stargazers_count));
 
+        // Get user info from github api
+        let res = reqwest::Client::new()
+        .get(&format!("https://api.github.com/users/{}", username))
+        .header("User-Agent", "repo_list") // Required by github api
+        .send().await?;
+
+        // Parse response into a user
+        let text = res.text().await?;
+        println!("{}", text);
+        let user: User = match serde_json::from_str(&text) {
+            Ok(user) => user,
+            Err(_) => return Err(Error::APIError),
+        };
+
+        println!("{}", user.avatar_url);
+
+        // Get user avatar
+        let avatar = Self::fetch_image(user.avatar_url).await?;
+
         Ok(Repositories {
             list: repos,
+            avatar: avatar,
+            username: user.login,
         })
+    }
+
+    async fn fetch_image(url: String) -> Result<image::Handle, reqwest::Error> {
+        let bytes = reqwest::get(&url).await?.bytes().await?;
+        Ok(image::Handle::from_memory(bytes.as_ref().to_vec()))
     }
 }
 
