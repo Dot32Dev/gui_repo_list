@@ -2,9 +2,11 @@ use serde::Deserialize;
 use iced::widget::{column, container, row, text, scrollable, text_input, button, image};
 use iced::widget::scrollable::{Properties};
 use iced::{
-    Alignment, Application, Color, Command, Element, Length, Settings, Theme, alignment,
+    Alignment, Application, Color, Command, Element, Length, Settings, Theme, alignment, Subscription,
 };
-use iced::futures::StreamExt;
+// use iced::futures::StreamExt;
+use std::time::{SystemTime, UNIX_EPOCH, Duration, Instant};
+use iced::time;
 
 pub fn main() -> iced::Result {
     RepoList::run(Settings::default())
@@ -28,6 +30,7 @@ enum Message {
     Search(String),
     InputChanged(String),
     OpenLink(String),
+    // Tick(Instant),
 }
 
 impl Application for RepoList {
@@ -50,6 +53,10 @@ impl Application for RepoList {
     fn title(&self) -> String {
         "Repo List".to_string()
     }
+
+    // fn subscription(&self) -> Subscription<Message> {
+    //     time::every(Duration::from_millis(1000)).map(Message::Tick)
+    // }
 
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
@@ -80,6 +87,9 @@ impl Application for RepoList {
                 webbrowser::open(&link).unwrap();
                 Command::none()
             }
+            // Message::Tick(now) => {
+            //     Command::none()
+            // }
         }
     }
 
@@ -157,6 +167,14 @@ struct Repositories {
     list: Vec<Repo>,
     avatar: image::Handle,
     username: String,
+    // rate_limit: RateLimit,
+}
+
+#[derive(Debug, Clone)]
+struct RateLimit {
+    limit: String,
+    remaining: String,
+    reset: u64,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -279,9 +297,21 @@ impl Repositories {
         .send().await?;
 
         // get rate limit info
-        let rate_limit = res.headers().get("x-ratelimit-remaining").unwrap().to_str().unwrap();
-        let rate_limit_reset = res.headers().get("x-ratelimit-reset").unwrap().to_str().unwrap();
-        println!("Rate limit: {} (reset in <t:{}:R>)", rate_limit, rate_limit_reset);
+        let rate_limit = res.headers().get("x-ratelimit-remaining").unwrap().to_str().unwrap(); // how many requests are left
+        let max_requests = res.headers().get("x-ratelimit-limit").unwrap().to_str().unwrap(); // max requests per hour
+        let rate_limit_reset = res.headers().get("x-ratelimit-reset").unwrap().to_str().unwrap(); // when the rate limit resets (unix timestamp)
+        println!("Rate limit: {}/{} (reset in <t:{}:R>)", rate_limit, max_requests, rate_limit_reset);
+
+        // Get seconds until rate limit resets
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+        let seconds_until_reset = rate_limit_reset.parse::<u64>().unwrap() - now;
+
+        // Convert seconds to hours, minutes, seconds
+        let hours = seconds_until_reset / 3600;
+        let minutes = (seconds_until_reset % 3600) / 60;
+        let seconds = seconds_until_reset % 60;
+        println!("Rate limit reset in {}h {}m {}s", hours, minutes, seconds);
+
 
         // Parse response into a user
         let text = res.text().await?;
@@ -297,6 +327,11 @@ impl Repositories {
             list: repos,
             avatar: avatar,
             username: user.login,
+            // rate_limit: RateLimit {
+            //     limit: max_requests.to_string(),
+            //     remaining: rate_limit.to_string(),
+            //     reset: seconds_until_reset,
+            // },
         })
     }
 
