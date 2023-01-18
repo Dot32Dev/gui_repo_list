@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use iced::widget::{self, column, container, row, text, scrollable, text_input};
+use iced::widget::{column, container, row, text, scrollable, text_input};
 use iced::widget::scrollable::{Properties};
 use iced::{
     Alignment, Application, Color, Command, Element, Length, Settings, Theme, alignment,
@@ -16,7 +16,7 @@ struct RepoList {
 }
 
 enum List {
-    Loading { username: String},
+    Loading,
     Loaded { repositories: Repositories },
     Errored,
 }
@@ -38,9 +38,10 @@ impl Application for RepoList {
         (
             RepoList {
                 input_value: "dot32iscool".to_string(),
-                list: List::Loading { username: "dot32iscool".to_string()},
+                list: List::Loading,
             },
             Command::perform(Repositories::search("dot32iscool".to_string()), Message::Loaded),
+            // Command::none(),
         )
     }
 
@@ -61,9 +62,9 @@ impl Application for RepoList {
                 Command::none()
             }
             Message::Search(username) => match self.list {
-                List::Loading {username: _} => Command::none(),
+                List::Loading => Command::none(),
                 _ => {
-                    self.list = List::Loading { username: username.clone()};
+                    self.list = List::Loading;
 
                     Command::perform(Repositories::search(username), Message::Loaded)
                 }
@@ -77,7 +78,7 @@ impl Application for RepoList {
 
     fn view(&self) -> Element<Message> {
         let content = match &self.list {
-            List::Loading {username: _} => column![
+            List::Loading => column![
                 // column![text("Loading...").size(40),]
                 //     .width(Length::Shrink)
                 container(
@@ -243,8 +244,4 @@ impl From<reqwest::Error> for Error {
 
         Error::APIError
     }
-}
-
-fn text_button(text: &str) -> widget::Button<'_, Message> {
-    widget::button(text).padding(10)
 }
