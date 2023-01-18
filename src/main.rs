@@ -54,7 +54,8 @@ impl Application for RepoList {
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Loaded(Ok(repositories)) => {
-                self.list = List::Loaded { repositories };
+                self.list = List::Loaded { repositories: repositories.clone() };
+                self.input_value = repositories.username;
 
                 Command::none()
             }
@@ -108,6 +109,7 @@ impl Application for RepoList {
             ],
             List::Loaded { repositories } => column![
                 repositories.view(),
+
             ]
             .spacing(20)
             .align_items(Alignment::End),
