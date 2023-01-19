@@ -15,6 +15,7 @@ pub fn main() -> iced::Result {
 struct RepoList {
     input_value: String,
     list: List,
+    rate_limit: Option<RateLimit>,
 }
 
 enum List {
@@ -44,6 +45,7 @@ impl Application for RepoList {
             RepoList {
                 input_value: "".to_string(),
                 list: List::EnterUsername,
+                rate_limit: None,
             },
             // Command::perform(Repositories::search("dot32iscool".to_string()), Message::Loaded),
             Command::none(),
@@ -63,6 +65,7 @@ impl Application for RepoList {
             Message::Loaded(Ok(repositories)) => {
                 self.list = List::Loaded { repositories: repositories.clone() };
                 self.input_value = repositories.username;
+                self.rate_limit = Some(repositories.rate_limit);
 
                 Command::none()
             }
@@ -146,9 +149,9 @@ impl Application for RepoList {
                     &self.input_value,
                     Message::InputChanged,
                 ).on_submit(Message::Search(self.input_value.clone())),
-                button(text("Search")).on_press(Message::Search(self.input_value.clone()))
+                button(text("Search")).on_press(Message::Search(self.input_value.clone())),
             ].align_items(Alignment::Center)).width(300.into()).padding(10),
-            content
+            content,
         ].align_items(Alignment::Center))
         .width(Length::Fill)
         .height(Length::Fill)
@@ -232,15 +235,21 @@ impl Repositories {
         // repos.into()
 
         column![
-            container(row![
-                image(self.avatar.clone())
-                    .width(Length::Units(50))
-                    .height(Length::Units(50)),
-                text(&self.username).size(20),
-                //open link to github profile
-                button(text("Open Profile"))
-                    .on_press(Message::OpenLink(format!("https://github.com/{}", self.username)))
-            ].align_items(Alignment::Center).spacing(20)).align_x(alignment::Horizontal::Center).width(Length::Fill),
+            row![
+                container(row![
+                    image(self.avatar.clone())
+                        .width(Length::Units(50))
+                        .height(Length::Units(50)),
+                    text(&self.username).size(20),
+                    //open link to github profile
+                    button(text("Open Profile"))
+                        .on_press(Message::OpenLink(format!("https://github.com/{}", self.username)))
+                ].align_items(Alignment::Center).spacing(20)).align_x(alignment::Horizontal::Center).width(Length::Fill),
+                container(row![
+                    text(format!("Limit: {}/{}", self.rate_limit.remaining, self.rate_limit.limit)),
+                    text(format!("Resets in {} seconds", self.rate_limit.reset)),
+                ]).align_x(alignment::Horizontal::Center).width(Length::Fill),
+            ],
             scrollable(
                 container(repos)
                 .padding(20)
