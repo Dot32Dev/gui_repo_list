@@ -247,8 +247,8 @@ impl Repositories {
                 ].align_items(Alignment::Center).spacing(20)).align_x(alignment::Horizontal::Center).width(Length::Fill),
                 container(row![
                     text(format!("Limit: {}/{}", self.rate_limit.remaining, self.rate_limit.limit)),
-                    text(format!("Resets in {} seconds", self.rate_limit.reset)),
-                ]).align_x(alignment::Horizontal::Center).width(Length::Fill),
+                    // text(format!("Resets in {} seconds", self.rate_limit.reset)),
+                ].align_items(Alignment::Center)).align_x(alignment::Horizontal::Center).width(Length::Fill),
             ],
             scrollable(
                 container(repos)
